@@ -153,8 +153,11 @@ const Root = () => {
         circles[idx].fill(new Color(255, 0, 0));
       }
 
-      reachedSetFrames.push(new Set());
-      animateGraph(circles[idx].graphId, reachedSetFrames.length - 1);
+      const newFrame: Set<number> = new Set();
+      const id = circles[idx].graphId;
+      newFrame.add(id);
+      reachedSetFrames.push(newFrame);
+      animateGraph(id, reachedSetFrames.length - 1);
     });
 
     circles.forEach((circle) => circleCollection.add(circle));
