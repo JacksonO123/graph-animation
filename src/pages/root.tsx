@@ -8,6 +8,7 @@ const Root = () => {
   const cutoff = 260;
 
   const drawPointColors = false;
+  // const drawPointColors = true;
 
   onPageMount(() => {
     const canvas = new Simulation('canvas');

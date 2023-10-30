@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@jacksonotto/lampjs':
-    specifier: latest
-    version: 4.0.0
+    specifier: ^4.2.2
+    version: 4.2.2
   simulationjs:
     specifier: ^3.8.8
     version: 3.8.8
@@ -223,8 +223,8 @@ packages:
     dev: true
     optional: true
 
-  /@jacksonotto/lampjs@4.0.0:
-    resolution: {integrity: sha512-U1Wfer3jIG/ZOAzhmd77s9LCfPFIvn/C61QdyMtIbdEsJYq2TX7l66FKWWWEGXzs6SWjV1wd3XBIadr0TsVXjQ==}
+  /@jacksonotto/lampjs@4.2.2:
+    resolution: {integrity: sha512-p+5GAq3pTuW6LVd6dKiKiA03FZGW0NMSSkfgLLivWhFADFFC+CO2P/hJyK1QAlFFfnNWyczBnHkyQN5SzzfRvQ==}
     dev: false
 
   /@types/node@20.8.9:

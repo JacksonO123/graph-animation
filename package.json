@@ -13,7 +13,7 @@
     "vite": "latest"
   },
   "dependencies": {
-    "@jacksonotto/lampjs": "latest",
+    "@jacksonotto/lampjs": "^4.2.2",
     "simulationjs": "^3.8.8"
   }
 }
