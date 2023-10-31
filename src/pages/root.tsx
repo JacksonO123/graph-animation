@@ -164,7 +164,16 @@ const Root = () => {
     circles.forEach((circle) => circleCollection.add(circle));
   });
 
-  return <canvas id="canvas" />;
+  return (
+    <div class="root">
+      <div class="info">
+        <span>Jackson Otto</span>
+        <br />
+        <div>Click anywhere</div>
+      </div>
+      <canvas id="canvas" />
+    </div>
+  );
 };
 
 export default Root;

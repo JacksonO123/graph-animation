@@ -1,0 +1,19 @@
+.root {
+  height: 100vh;
+}
+
+.info {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.125);
+  padding: 8px;
+  background: white;
+}
+
+.info span {
+  font-size: 17px;
+  font-weight: 500;
+}
