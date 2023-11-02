@@ -137,14 +137,9 @@ const Root = () => {
       circles.forEach((circle) => circle.fill(new Color(0, 0, 0)));
 
       let pos = new Vector(e.clientX, e.clientY);
-      let idx = -1;
+      let idx = 0;
 
-      for (let i = 0; i < circles.length; i++) {
-        if (idx < 0) {
-          idx = i;
-          continue;
-        }
-
+      for (let i = 1; i < circles.length; i++) {
         if (distance(circles[i].pos, pos) < distance(circles[idx].pos, pos)) {
           idx = i;
         }
