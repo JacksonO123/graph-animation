@@ -6,6 +6,7 @@ import './root.css';
 const Root = () => {
   const graph = new Graph();
   const cutoff = 260;
+  const travelerSpeed = 5;
 
   const drawPointColors = false;
   // const drawPointColors = true;
@@ -126,7 +127,9 @@ const Root = () => {
               circles[i].fill(new Color(0, 255, 0));
             }
             reachedSetFrames[frame].add(circles[i].graphId);
-            travelers.push(new Traveler(circlePos, circles[i].pos, 2, cutoff, circles[i].graphId, frame));
+            travelers.push(
+              new Traveler(circlePos, circles[i].pos, travelerSpeed, cutoff, circles[i].graphId, frame)
+            );
             break;
           }
         }
