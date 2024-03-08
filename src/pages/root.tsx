@@ -6,7 +6,7 @@ import './root.css';
 const Root = () => {
   const graph = new Graph();
   const cutoff = 260;
-  const travelerSpeed = 5;
+  const travelerSpeed = 3;
 
   const drawPointColors = false;
   // const drawPointColors = true;

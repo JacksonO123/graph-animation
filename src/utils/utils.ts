@@ -16,7 +16,8 @@ export class MovingCircle extends Circle {
     this.graphId = pos.id;
   }
   step() {
-    const vec = new Vector(0.5, 0);
+    const speed = 0.42;
+    const vec = new Vector(speed, 0);
     vec.rotate(this.dir);
     this.pos.add(vec);
 
