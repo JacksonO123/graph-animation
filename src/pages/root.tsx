@@ -6,7 +6,7 @@ import './root.css';
 const Root = () => {
   const graph = new Graph();
   const cutoff = 260;
-  const travelerSpeed = 3;
+  const travelerSpeed = 6;
 
   const drawPointColors = false;
   // const drawPointColors = true;
@@ -45,8 +45,12 @@ const Root = () => {
       reachedSetFrames.splice(frame, 1);
     };
 
-    frameLoop(() => {
-      circles.forEach((circle) => circle.step());
+    const fps60Delay = 1000 / 60;
+
+    frameLoop((d) => {
+      const scale = (d || 1) / fps60Delay;
+
+      circles.forEach((circle) => circle.step(scale));
 
       graph.update(points, cutoff);
 
@@ -57,7 +61,7 @@ const Root = () => {
       travelers.forEach((traveler) => {
         traveler.draw(canvas.ctx as CanvasRenderingContext2D);
 
-        const remove = traveler.update();
+        const remove = traveler.update(scale);
 
         if (remove === 'terminated') return;
 

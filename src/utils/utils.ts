@@ -7,6 +7,7 @@ export class MovingCircle extends Circle {
   height: number;
   graphId: number;
   private readonly buffer = 80;
+
   constructor(pos: InfoPoint, radius: number, width: number, height: number, color?: Color) {
     super(pos, radius, color);
     this.dir = Math.floor(Math.random() * 360);
@@ -15,8 +16,9 @@ export class MovingCircle extends Circle {
     this.height = height;
     this.graphId = pos.id;
   }
-  step() {
-    const speed = 0.42;
+
+  step(scale: number) {
+    const speed = 0.6 * scale;
     const vec = new Vector(speed, 0);
     vec.rotate(this.dir);
     this.pos.add(vec);
@@ -122,6 +124,8 @@ export class Traveler extends Circle {
   destId: number | null;
   private terminated: boolean;
   frame: number;
+  private traveled: number;
+
   constructor(from: Vector, to: Vector, speed: number, cutoff: number, destId: number, frame: number) {
     super(from, 3, new Color(0, 123, 255));
     this.from = from;
@@ -132,16 +136,19 @@ export class Traveler extends Circle {
     this.destId = destId;
     this.terminated = false;
     this.frame = frame;
+    this.traveled = 0;
   }
+
   isDone() {
     return distance(this.pos, this.to) <= this.speed;
   }
-  update(): TravelerStatus {
+
+  update(scale: number): TravelerStatus {
     const vec = new Vector(this.to.x - this.from.x, this.to.y - this.from.y);
-    vec
-      .normalize()
-      .multiply(this.speed * this.frameCount)
-      .add(this.from);
+
+    vec.normalize().multiply(this.traveled).add(this.from);
+
+    this.traveled += this.speed * scale;
 
     if (this.terminated) {
       if (this.destId !== null) {
