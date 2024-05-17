@@ -31,9 +31,22 @@ const Root = () => {
       });
     });
 
+    /*
+     * A frame keeps track of all nodes currently reached in the simulation relative to all
+     * travelers created on a single click.
+     * This is so clicking more can spawn in travelers that do not relate to each other in
+     * reached nodes
+     */
+
     const travelers: Traveler[] = [];
+    // travelers that have reached their destination
+    // but need to complete an animation, should be
+    // removed from this array when animation finishes
     const removedTravelers: Traveler[] = [];
+    // frames that should be removed, but may contain
+    // travelers that have not reached their destination
     const frameRemoveQueue: number[] = [];
+    // all currently reached nodes for a frame
     const reachedSetFrames: Set<number>[] = [];
     const fps60Delay = 1000 / 60;
 
