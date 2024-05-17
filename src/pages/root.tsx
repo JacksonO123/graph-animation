@@ -2,10 +2,10 @@ import { onPageMount } from '@jacksonotto/lampjs';
 import { Color, SceneCollection, Simulation, Vector, distance, frameLoop } from 'simulationjs';
 import { Graph, Traveler, generateLines, generatePoints, pointsToCircles } from '../utils/utils';
 import './root.css';
+import { CUTOFF, TRAVELER_STOP_TIME, TravelerStatus } from '@/utils/constants';
 
 const Root = () => {
   const graph = new Graph();
-  const cutoff = 260;
   const travelerSpeed = 6;
 
   const drawPointColors = false;
@@ -26,70 +26,65 @@ const Root = () => {
 
     addEventListener('resize', () => {
       circles.forEach((circle) => {
-        circle.width = canvas.width;
-        circle.height = canvas.height;
+        circle.setWidth(canvas.width);
+        circle.setHeight(canvas.height);
       });
     });
 
-    const removedTravelers: Traveler[] = [];
     const travelers: Traveler[] = [];
+    const removedTravelers: Traveler[] = [];
     const frameRemoveQueue: number[] = [];
     const reachedSetFrames: Set<number>[] = [];
+    const fps60Delay = 1000 / 60;
 
     const attemptRemoveFrame = (frame: number) => {
       for (let i = 0; i < travelers.length; i++) {
-        if (travelers[i].frame === frame) return;
-        if (travelers[i].frame > frame) travelers[i].frame--;
+        if (travelers[i].getFrame() === frame) return;
+      }
+
+      for (let i = 0; i < travelers.length; i++) {
+        const frame = travelers[i].getFrame();
+        if (frame > frame) travelers[i].setFrame(frame - 1);
       }
 
       reachedSetFrames.splice(frame, 1);
     };
 
-    const fps60Delay = 1000 / 60;
-
-    frameLoop((d) => {
-      const scale = (d || 1) / fps60Delay;
-
-      circles.forEach((circle) => circle.step(scale));
-
-      graph.update(points, cutoff);
-
-      lineCollection.empty();
-      const lines = generateLines(points, cutoff);
-      lines.forEach((line) => lineCollection.add(line));
-
-      travelers.forEach((traveler) => {
-        traveler.draw(canvas.ctx as CanvasRenderingContext2D);
-
-        const remove = traveler.update(scale);
-
-        if (remove === 'terminated') return;
-
-        if (remove === 'stop') {
-          if (traveler.destId) {
-            animateGraph(traveler.destId, traveler.frame);
-          }
-
-          removedTravelers.unshift(traveler);
-          setTimeout(() => {
-            for (let i = 0; i < travelers.length; i++) {
-              if (travelers[i] === traveler) {
-                travelers.splice(i, 1);
-                i--;
-                if (traveler.frame in frameRemoveQueue) {
-                  attemptRemoveFrame(traveler.frame);
-                }
-              }
-            }
-            removedTravelers.pop();
-          }, 250);
-        }
-      });
-    })();
-
     const getValidConnections = (id: number, frame: number) => {
       const connections = graph.getConnections(id);
       return connections.filter((item) => !reachedSetFrames[frame].has(item));
+    };
+
+    const getCirclePos = (id: number) => {
+      for (let i = 0; i < circles.length; i++) {
+        if (circles[i].getGraphId() === id) return circles[i].pos;
+      }
+
+      return null;
+    };
+
+    const addTraveler = (id: number, frame: number) => {
+      const connections = getValidConnections(id, frame);
+
+      const circlePos = getCirclePos(id);
+      if (!circlePos) return;
+
+      for (let i = 0; i < circles.length; i++) {
+        for (let j = 0; j < connections.length; j++) {
+          if (circles[i].getGraphId() === connections[j]) {
+            if (drawPointColors) {
+              circles[i].fill(new Color(0, 255, 0));
+            }
+
+            reachedSetFrames[frame].add(circles[i].getGraphId());
+            travelers.push(
+              new Traveler(circlePos, circles[i].pos, travelerSpeed, CUTOFF, circles[i].getGraphId(), frame)
+            );
+
+            break;
+          }
+        }
+      }
     };
 
     const animateGraph = (circleId: number, frame: number) => {
@@ -98,11 +93,11 @@ const Root = () => {
       let complete = true;
       let frameTravelers = 0;
       for (let i = 0; i < travelers.length; i++) {
-        if (travelers[i].frame === frame) {
+        if (travelers[i].getFrame() === frame) {
           frameTravelers++;
 
-          if (travelers[i].destId) {
-            const connections = getValidConnections(travelers[i].destId as number, frame);
+          if (travelers[i].hasDestination()) {
+            const connections = getValidConnections(travelers[i].getDestId() as number, frame);
             if (connections.length > 0) complete = false;
           }
         }
@@ -113,32 +108,54 @@ const Root = () => {
         return;
       }
 
-      const connections = getValidConnections(circleId, frame);
+      addTraveler(circleId, frame);
+    };
 
-      let circlePos: Vector | null = null;
-      for (let i = 0; i < circles.length; i++) {
-        if (circles[i].graphId === circleId) {
-          circlePos = circles[i].pos;
-        }
-      }
+    const removeTraveler = (traveler: Traveler) => {
+      removedTravelers.unshift(traveler);
 
-      if (!circlePos) return;
+      setTimeout(() => {
+        for (let i = 0; i < travelers.length; i++) {
+          if (travelers[i] === traveler) {
+            travelers.splice(i, 1);
+            i--;
 
-      for (let i = 0; i < circles.length; i++) {
-        for (let j = 0; j < connections.length; j++) {
-          if (circles[i].graphId === connections[j]) {
-            if (drawPointColors) {
-              circles[i].fill(new Color(0, 255, 0));
+            // if this traveler's frame is queued for remove
+            // attempt to remove it because this could be
+            // the last traveler in the frame
+            const frame = traveler.getFrame();
+            if (frame in frameRemoveQueue) {
+              attemptRemoveFrame(frame);
             }
-            reachedSetFrames[frame].add(circles[i].graphId);
-            travelers.push(
-              new Traveler(circlePos, circles[i].pos, travelerSpeed, cutoff, circles[i].graphId, frame)
-            );
-            break;
           }
         }
-      }
+        removedTravelers.pop();
+      }, TRAVELER_STOP_TIME);
     };
+
+    frameLoop((d) => {
+      const scale = (d || 1) / fps60Delay;
+
+      circles.forEach((circle) => circle.step(scale));
+      graph.update(points, CUTOFF);
+
+      lineCollection.empty();
+      const lines = generateLines(points, CUTOFF);
+      lines.forEach((line) => lineCollection.add(line));
+
+      travelers.forEach((traveler) => {
+        traveler.draw(canvas.ctx as CanvasRenderingContext2D);
+
+        const status = traveler.update(scale);
+
+        if (status === TravelerStatus.Stopping) return;
+
+        if (status === TravelerStatus.Complete) {
+          if (traveler.hasDestination()) animateGraph(traveler.getDestId() as number, traveler.getFrame());
+          removeTraveler(traveler);
+        }
+      });
+    })();
 
     canvas.on('click', (e: MouseEvent) => {
       circles.forEach((circle) => circle.fill(new Color(0, 0, 0)));
@@ -157,9 +174,10 @@ const Root = () => {
       }
 
       const newFrame: Set<number> = new Set();
-      const id = circles[idx].graphId;
+      const id = circles[idx].getGraphId();
       newFrame.add(id);
       reachedSetFrames.push(newFrame);
+
       animateGraph(id, reachedSetFrames.length - 1);
     });
 

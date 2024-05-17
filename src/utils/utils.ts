@@ -1,11 +1,12 @@
 import { Circle, Color, Line, Vector, distance, randInt } from 'simulationjs';
+import { TRAVELER_STOP_TIME, TravelerStatus } from './constants';
 
 export class MovingCircle extends Circle {
   private dir: number;
   private toDir: number;
-  width: number;
-  height: number;
-  graphId: number;
+  private width: number;
+  private height: number;
+  private graphId: number;
   private readonly buffer = 80;
 
   constructor(pos: InfoPoint, radius: number, width: number, height: number, color?: Color) {
@@ -14,7 +15,27 @@ export class MovingCircle extends Circle {
     this.toDir = Math.floor(Math.random() * 360) - 180;
     this.width = width;
     this.height = height;
-    this.graphId = pos.id;
+    this.graphId = pos.getId();
+  }
+
+  getWidth() {
+    return this.width;
+  }
+
+  setWidth(width: number) {
+    this.width = width;
+  }
+
+  getHeight() {
+    return this.height;
+  }
+
+  setHeight(height: number) {
+    this.height = height;
+  }
+
+  getGraphId() {
+    return this.graphId;
   }
 
   step(scale: number) {
@@ -47,10 +68,15 @@ export class MovingCircle extends Circle {
 }
 
 export class InfoPoint extends Vector {
-  id: number;
+  private id: number;
+
   constructor(x: number, y: number, id: number) {
     super(x, y);
     this.id = id;
+  }
+
+  getId() {
+    return this.id;
   }
 }
 
@@ -104,16 +130,14 @@ export class Graph {
       for (let j = 0; j < points.length; j++) {
         if (i === j) continue;
         if (distance(point, points[j]) < cutoff) {
-          connections.push(points[j].id);
+          connections.push(points[j].getId());
         }
       }
 
-      this.graph[point.id] = connections;
+      this.graph[point.getId()] = connections;
     });
   }
 }
-
-type TravelerStatus = 'continue' | 'stop' | 'terminated';
 
 export class Traveler extends Circle {
   private readonly from: Vector;
@@ -121,9 +145,10 @@ export class Traveler extends Circle {
   private readonly cutoff: number;
   private readonly speed: number;
   private frameCount: number;
-  destId: number | null;
+  // destId null after being cutoff (from & to too far, not moving)
+  private destId: number | null;
   private terminated: boolean;
-  frame: number;
+  private frame: number;
   private traveled: number;
 
   constructor(from: Vector, to: Vector, speed: number, cutoff: number, destId: number, frame: number) {
@@ -139,8 +164,24 @@ export class Traveler extends Circle {
     this.traveled = 0;
   }
 
+  getFrame() {
+    return this.frame;
+  }
+
+  setFrame(frame: number) {
+    this.frame = frame;
+  }
+
+  getDestId() {
+    return this.destId;
+  }
+
   isDone() {
     return distance(this.pos, this.to) <= this.speed;
+  }
+
+  hasDestination() {
+    return !!this.destId;
   }
 
   update(scale: number): TravelerStatus {
@@ -157,26 +198,26 @@ export class Traveler extends Circle {
         this.moveTo(vec);
       }
 
-      return 'terminated';
+      return TravelerStatus.Stopping;
     }
 
     if (this.isDone()) {
       this.terminated = true;
-      this.fill(new Color(this.color.r, this.color.g, this.color.b, 0), 0.25);
-      return 'stop';
+      this.fill(new Color(this.color.r, this.color.g, this.color.b, 0), TRAVELER_STOP_TIME / 1000);
+      return TravelerStatus.Complete;
     }
 
     if (distance(this.to, this.from) > this.cutoff) {
       this.setRadius(0, 0.1);
       this.terminated = true;
       this.destId = null;
-      return 'stop';
+      return TravelerStatus.Complete;
     }
 
     this.moveTo(vec);
 
     this.frameCount++;
 
-    return 'continue';
+    return TravelerStatus.Active;
   }
 }
